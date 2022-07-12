@@ -90,7 +90,7 @@ void cholesky_memory_init_task(const struct matrix_info *pinfo,
 	const size_t nt = pinfo->nt;
 	const size_t ts = pinfo->ts;
 	const size_t np = pinfo->np;
-
+	char *auto2 = NULL;
 	for (size_t i = 0; i < nt; ++i) {
 		for (size_t j = 0; j < nt; ++j) {
 			int nodeij = get_block_node(pinfo, i, j);
@@ -103,9 +103,7 @@ void cholesky_memory_init_task(const struct matrix_info *pinfo,
 					node(nanos6_cluster_no_offload) label("init_Ans")
 				fill_block(ts, Ansij, i, j, dim);
 
-				#pragma oss task weakin(Ansij[0;ts][0;ts])		\
-					weakout(Aij[0;ts][0;ts])					\
-					node(nodeij) label("weak_copy_Ans")
+				#pragma oss task allmemory(auto2[1;-2]) nowait	node(nodeij) label("weak_copy_Ans")
 				{
 					#pragma oss task in(Ansij[0;ts][0;ts])		\
 						out(Aij[0;ts][0;ts])					\
@@ -178,6 +176,7 @@ void cholesky_memory_ompss2(
 	double A[pinfo->nt * pinfo->nt][pinfo->ts][pinfo->ts]
 ) {
 	printf("# cholesky memory\n");
+	char *auto2 = NULL;
 
 	const size_t dim = pinfo->nt * pinfo->ts;
 	const size_t nt = pinfo->nt;
@@ -197,7 +196,7 @@ void cholesky_memory_ompss2(
 
 		double (*Akk)[ts] = A[ get_block_global_index(&info, k, k) ];
 
-		#pragma oss task weakinout(Akk[0;ts][0;ts])	\
+		#pragma oss task allmemory(auto2[1;-2]) nowait	\
 			node(nodekk) label("weak_potrf")
 		{
 			#pragma oss task inout(Akk[0;ts][0;ts]) \
@@ -214,8 +213,7 @@ void cholesky_memory_ompss2(
 
 			const size_t start = get_block_global_index(&info, k, it);
 
-			#pragma oss task weakin(Akk[0;ts][0;ts])			   \
-				weakinout(A[start;npcols][0;ts][0;ts])			   \
+			#pragma oss task allmemory(auto2[1;-2]) nowait			   \
 				node(node) label("weak_trsm")
 			{
 				for (size_t i = k + 1; i < nt; ++i) {
@@ -254,8 +252,7 @@ void cholesky_memory_ompss2(
 			}
 
 
-			#pragma oss task weakin( {A[idxk0 + i*blocks_per_node; npcols][0;ts][0;ts], i=0;pcols} ) \
-				weakinout(A[first; count][0;ts][0;ts])					\
+			#pragma oss task allmemory(auto2[1;-2]) nowait					\
 				node(node) label("weak_syrk")
 			{
 				for (size_t i = k + 1; i < nt; ++i) {
@@ -416,6 +413,7 @@ int main(int argc, char *argv[])
 	nanos6_dfree(A, ROWS * ROWS * sizeof(double));
 
 	free_args();
-
+	
+	#pragma oss taskwait
 	return 0;
 }
