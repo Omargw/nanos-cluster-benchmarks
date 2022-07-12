@@ -54,6 +54,22 @@ foreach (TYPEID 0;1)
 
 endforeach ()
 
+#======= cholesky_fare auto versions ==========
+SET(TESTTYPE memory taskfor weak)
+foreach (TYPEID 0;1;2)
+  list(GET TESTTYPE ${TYPEID} TYPE)
+  set(executable "cholesky_fare_${TYPE}_auto_ompss2")
+
+  message("- Add benchmark: ${executable}")
+  add_executable(${executable} "${executable}.c")
+
+  add_test(NAME Test_${executable}
+    COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 4 ./${executable} 512 16)
+  set_tests_properties(Test_${executable} PROPERTIES
+    ENVIRONMENT "NANOS6_CONFIG=${CMAKE_BINARY_DIR}/nanos6.toml")
+
+endforeach ()
+
 # ==============================================
 # submitter
 configure_file("${PROJECT_SOURCE_DIR}/utils/submit_dim.sh" submit_dim.sh @ONLY)
