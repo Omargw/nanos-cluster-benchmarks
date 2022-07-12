@@ -42,14 +42,14 @@ project(nanos6_benchmarks)
 include(CMakeDependentOption)
 
 option(WITH_NAMESPACE "Build tests for namespace code" true)
-option(WITH_ASAN "Build tests with address sanitizer" false)
-option(WITH_EXTRAE "Build with Extrae traces support" false)
+option(WITH_ASAN "Build tests with address sanitizer." false)
+option(WITH_EXTRAE "Build with Extrae traces support." false)
 cmake_dependent_option(WITH_PRVANIM "Build with PRVANIM" true "WITH_EXTRAE" false)
-option(WITH_KEEP "Keep mcc intermediate files" false)
+option(WITH_KEEP "Keep mcc intermediate files." false)
 option(WITH_SERIAL "Build serial version of the code when available." false)
 option(WITH_NONODE "Build the code version without the node hint." false)
 option(WITH_MKL "Use MKL as BLAS library." true)
-option(WITH_AUTO "BUilding tests for auto" true)
+option(WITH_AUTO "BUild auto version." true)
 
 
 set(CMAKE_CXX_STANDARD 11)

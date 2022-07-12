@@ -53,6 +53,16 @@ foreach(BLAS 0 1)
 
 endforeach ()
 
+# auto version 
+set(EXECUTABLE "jacobi_taskfor_blas_auto_ompss2")
+message("- Add benchmark: ${EXECUTABLE}")
+add_executable(${EXECUTABLE} jacobi_taskfor_auto_ompss2.c)
+target_compile_definitions(${EXECUTABLE} PUBLIC BLAS=1)
+add_test(NAME Test_${EXECUTABLE}
+    COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ./${EXECUTABLE} 128 8 3)
+set_tests_properties(Test_${EXECUTABLE} PROPERTIES
+    ENVIRONMENT "NANOS6_CONFIG=${CMAKE_BINARY_DIR}/nanos6.toml")
+
 # Submit
 configure_file("${PROJECT_SOURCE_DIR}/utils/submit_dim.sh" submit_dim.sh @ONLY)
 configure_file("${PROJECT_SOURCE_DIR}/utils/submitter_dim.sh" submitter_dim.sh @ONLY)
