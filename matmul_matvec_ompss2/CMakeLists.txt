@@ -111,6 +111,22 @@ foreach (NODEID 0;1)
   endforeach ()
 endforeach ()
 
+# auto version
+SET(TESTLIST matmul matvec) # The order is important
+foreach (ISMATVEC 0;1)
+    list(GET TESTLIST ${ISMATVEC} TEST)
+    set(executable "${TEST}_weak_fetchall_task_node_blas_auto_ompss2")
+  	message("- Add benchmark: ${executable}")
+    add_executable(${executable} matmul_ompss2.c)
+    target_compile_definitions(${executable}
+	  PUBLIC TASKTYPE=4
+	  PUBLIC WITHNODE=1
+	  PUBLIC ISMATVEC=${ISMATVEC}
+	  PUBLIC FETCHTASK=1 
+	  PUBLIC BLAS=1)
+	  create_test_pair(${executable})
+endforeach()
+
 # Submit
 configure_file("${PROJECT_SOURCE_DIR}/utils/submit_dim.sh" submit_dim.sh @ONLY)
 configure_file("${PROJECT_SOURCE_DIR}/utils/submitter_dim.sh" submitter_dim.sh @ONLY)

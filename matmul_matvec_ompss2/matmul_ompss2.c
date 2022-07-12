@@ -180,6 +180,64 @@ void matvec_tasks_ompss2(const double *A, const double *B, double *C,
 	}
 }
 
+
+#elif TASKTYPE == 4 // auto
+
+void matvec_tasks_ompss2(const double *A, const double *B, double *C,
+						 size_t ts, size_t dim, size_t colsBC, size_t it)
+{
+	if (it == 0)
+	{
+		printf("# %s weak task FETCHTASK=%d withnode=%d\n",
+			   (ISMATVEC ? "matvec" : "matmul"), FETCHTASK, WITHNODE);
+	}
+
+	myassert(ts <= dim);
+	modcheck(dim, ts);
+
+	const size_t numNodes = nanos6_get_num_cluster_nodes();
+
+	const size_t rowsPerNode = dim / numNodes;
+	myassert(ts <= rowsPerNode);
+	modcheck(rowsPerNode, ts);
+
+	char *allmemory = NULL;
+
+	for (size_t i = 0; i < dim; i += rowsPerNode)
+	{
+
+		const int nodeid = (WITHNODE ? i / rowsPerNode : nanos6_cluster_no_hint);
+		for (size_t i = 0; i < dim; i += rowsPerNode)
+		{
+
+			const int nodeid = (WITHNODE ? i / rowsPerNode : nanos6_cluster_no_hint);
+
+			#pragma oss task auto(allmemory[1;-2]) nowait \
+			node(nodeid) label("weakmatvec")
+			{
+#if FETCHTASK == 1
+		#pragma oss task 									\
+		in(A[i * dim; rowsPerNode * dim]) 					\
+		in(B[0; dim * colsBC])                         		\
+		node(nanos6_cluster_no_offload) label("fetchtask")
+				{
+				}
+#endif
+				for (size_t j = i; j < i + rowsPerNode; j += ts)
+				{
+					#pragma oss task in(A[j * dim; ts * dim]) 				\
+					in(B[0; dim * colsBC])                					\
+					out(C[j * colsBC; ts * colsBC])   						\
+					node(nanos6_cluster_no_offload) label("strongmatvec")
+					{
+						matmul_base(&A[j * dim], B, &C[j * colsBC], ts, dim, colsBC);
+					}
+				}
+			}
+		}
+	}
+}
+
 #endif // TASKTYPE
 
 int main(int argc, char* argv[])
