@@ -141,6 +141,10 @@
 	# Disable the "autowait" feature, which disables early release for accesses of offloaded
 	# tasks that are not propagated in the remote namespace. Default is false
 	disable_autowait = false
+	# Enable eager fetching of weak dependencies. Default is true
+	eager_weak_fetch = false
+	# Enable eager send of all dependencies. Default is false
+	eager_send = false
 
 	[cluster.mpi]
 		# Decide if mpi messenger must use a different
